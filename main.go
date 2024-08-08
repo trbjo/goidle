@@ -57,10 +57,10 @@ func main() {
 	}
 	defer opm.Close()
 
-	configPath := os.Getenv("SWAY_SESSION_MANAGER_CONFIG")
+	configPath := os.Getenv("GOIDLE_CONFIG")
 	if configPath == "" {
 		home := os.Getenv("HOME")
-		configPath = filepath.Join(home, "/.config/SwaySessionManager.json")
+		configPath = filepath.Join(home, "/.config/goidle.json")
 	}
 
 	config := initConfig(configPath)
@@ -70,7 +70,7 @@ func main() {
 	idleEvents := make(chan IdleEvent)
 	lidEvents := make(chan LidEvent)
 	signalChannel := make(chan os.Signal, 1)
-	swaylockUnlockAttempt := make(chan SwaylockStatus)
+	LockUnlockAttempt := make(chan LockStatus)
 	userRequests := make(chan UserRequest)
 
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
@@ -83,7 +83,7 @@ func main() {
 	defer idleManager.Close()
 	SM := NewStateManager(idleManager)
 
-	swayLockStartUser, swayLockStartIdle, swayLockStop := CreateSwaylockManager(config, swaylockUnlockAttempt)
+	LockStartUser, LockStartIdle, LockStop := CreateLockManager(config, LockUnlockAttempt)
 	lidClosed := utilities.CreateLidChecker()
 	SuspendFunc := CreateSuspendFunc(lidClosed)
 
@@ -110,9 +110,9 @@ func main() {
 
 	for {
 		select {
-		case swRes := <-swaylockUnlockAttempt:
-			if swRes == SwaylockExit {
-				lg.Debug("SwaylockExit event", "", swRes.String())
+		case swRes := <-LockUnlockAttempt:
+			if swRes == LockExit {
+				lg.Debug("LockExit event", "", swRes.String())
 				SM.SetState(Active, 0, nop)
 			}
 			opm.On()
@@ -136,13 +136,13 @@ func main() {
 			switch res {
 			case TryUnlock:
 				lg.Debug("got TryUnlock on idleEvents")
-				if !swayLockStop() {
+				if !LockStop() {
 					opm.On()
 				}
 			case IdleRequest:
 				SM.SetState(Idle, 0, func() bool {
 					backlightOff()
-					return swayLockStartIdle()
+					return LockStartIdle()
 				})
 			case TryIdleToSuspend:
 				SM.SetState(Idle, 0, func() bool {
@@ -151,7 +151,7 @@ func main() {
 					// this means that the idle state will loop with a timeout of 20 seconds (see above).
 					// this ensures that even at some later point, if the laptop gets (dis)connected to a
 					// power source/monitor we will react to those events.
-					return !(opm.NumOutputs() == 1 && utilities.OnBattery() && SuspendFunc() && swayLockStop())
+					return !(opm.NumOutputs() == 1 && utilities.OnBattery() && SuspendFunc() && LockStop())
 				})
 			}
 		case res := <-userRequests:
@@ -160,13 +160,13 @@ func main() {
 			case Lock:
 				SM.SetState(Idle, 500*time.Millisecond, func() bool {
 					backlightOff()
-					return swayLockStartUser()
+					return LockStartUser()
 				})
 			case Suspend:
 				SM.SetState(Idle, 0, func() bool {
 					backlightOff()
 					// set or reset the idle state if the following shortcircuits:
-					return !(swayLockStartIdle() && SuspendFunc() && swayLockStop())
+					return !(LockStartIdle() && SuspendFunc() && LockStop())
 				})
 			case IdleInhibit:
 				if SM.ReadState() == Active {

@@ -22,8 +22,6 @@ type Notification struct {
 	ExpireTimeout int32
 }
 
-const APP_ID = "SwaySessionManager"
-
 func MusicStop() {
 	var names []string
 	conn := dbusConnection()
@@ -42,10 +40,10 @@ func MusicStop() {
 
 	for _, player := range players {
 		mediaPlayer := conn.Object(player, "/org/mpris/MediaPlayer2")
-		lg.Debug("pausing", player)
+		lg.Debug("pausing", "", player)
 		call := mediaPlayer.Call("org.mpris.MediaPlayer2.Player.Pause", 0)
 		if call.Err != nil {
-			lg.Error("Failed to send pause command", call.Err)
+			lg.Error("Failed to send pause command", "", call.Err)
 		}
 	}
 }

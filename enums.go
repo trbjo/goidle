@@ -29,10 +29,10 @@ func (t UserRequest) String() string {
 
 	}
 }
-func (t SwaylockStatus) String() string {
+func (t LockStatus) String() string {
 	switch t {
-	case SwaylockExit:
-		return "SwaylockExit"
+	case LockExit:
+		return "LockExit"
 	case UnlockFailed:
 		return "UnlockFailed"
 	default:
@@ -45,7 +45,7 @@ func (t SwaylockStatus) String() string {
 type IdleEvent int
 type LidEvent int
 type StateValue int
-type SwaylockStatus int
+type LockStatus int
 type UserRequest int
 type BackLight int
 
@@ -62,8 +62,8 @@ const (
 	LidClose LidEvent = 128
 	LidOpen  LidEvent = 256
 
-	SwaylockExit SwaylockStatus = 512
-	UnlockFailed SwaylockStatus = 1024
+	LockExit LockStatus = 512
+	UnlockFailed LockStatus = 1024
 
 	Active StateValue = 2048
 	Idle   StateValue = 4096
