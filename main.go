@@ -98,7 +98,9 @@ func main() {
 		backlightFunc(Restore)
 	}
 
-	go setupDbus(config,
+	go setupDbus(
+		config,
+		opm,
 		utilities.CreateNonBlockingSender(lidEvents),
 		utilities.CreateNonBlockingSender(userRequests),
 		backlightFunc,

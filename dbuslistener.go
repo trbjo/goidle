@@ -15,6 +15,7 @@ const (
 
 type WaylandListener struct {
     config           *Config
+    opm              *OutputPowerManager
     userRequestsFunc func(UserRequest)
     lidEventsFunc    func(LidEvent)
     backlightFunc    func(BackLight)
@@ -78,6 +79,15 @@ func (o *WaylandListener) IdleGraceDuration(graceDuration string) *dbus.Error {
     return nil
 }
 
+func (o *WaylandListener) ToggleOutput(output string) *dbus.Error {
+    lg.Info("output toggled")
+    err := o.opm.ToggleOutput(output)
+    if (err != nil) {
+        lg.Error(err.Error())
+    }
+    return nil
+}
+
 func (o *WaylandListener) IdleInhibit() *dbus.Error {
     lg.Debug("IdleInhibit")
     go func() { o.userRequestsFunc(IdleInhibit) }()
@@ -100,11 +110,9 @@ func (o *WaylandListener) LightDecrease() *dbus.Error {
     return nil
 }
 
-// case "screen_toggle":
-// fmt.Fprintf(&cmdBuilder, utilities.Backlight(utilities.Toggle))
-
 func setupDbus(
     config *Config,
+    opm *OutputPowerManager,
     lidEventsFunc func(LidEvent),
     userRequestsFunc func(UserRequest),
     backlightFunc func(BackLight),
@@ -127,6 +135,7 @@ func setupDbus(
 
     obj := &WaylandListener{
         config:           config,
+        opm:              opm,
         userRequestsFunc: userRequestsFunc,
         lidEventsFunc:    lidEventsFunc,
         backlightFunc:    backlightFunc,
