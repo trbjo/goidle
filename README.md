@@ -1,6 +1,6 @@
 # Goidle – A Wayland Idle Daemon
 
-Goidle is an idle management solution for Wayland compositors that implements output management, brightness control, and the `ext_idle_notify_v1` protocol.
+Goidle is an idle management solution for Wayland compositors that implements output management, brightness control, and of course idle management.
 
 ## Features
 
@@ -43,19 +43,19 @@ Goidle exposes the following DBus calls:
 |------|-------------|
 | `Suspend` | Puts the system into suspend mode |
 | `Lock` | Locks the screen |
-| `LidClose` | Simulates a laptop lid close event |
-| `LidOpen` | Simulates a laptop lid open event |
+| `LidClose` | Should be called when the lid is closed |
+| `LidOpen` | Should be called when the lid is opened |
 | `WifiTrust` | Adds current WiFi to trusted networks |
 | `WifiDistrust` | Removes current WiFi from trusted networks |
-| `LogDebug` | Sets log level to Debug |
-| `LogWarn` | Sets log level to Warning |
-| `LogInfo` | Sets log level to Info |
-| `IdleGraceDuration` | Sets the grace period before entering idle state |
-| `ToggleOutput` | Toggles the display output on/off |
-| `IdleInhibit` | Prevents the system from entering idle state |
+| `IdleGraceDuration` | If the system receives input activity within this duration the screen will unlock without requiring a password. This is distinct from setting the grace period on the screen locker, as this is monotonic and will take the suspend time into account. |
+| `ToggleOutput` | Toggles a display output on/off |
+| `IdleInhibit` | Prevents the system from entering idle state. This is reset when the system is suspended actively or the lid is closed. |
 | `IdleAllow` | Allows the system to enter idle state |
 | `LightIncrease` | Increases screen brightness |
 | `LightDecrease` | Decreases screen brightness |
+| `LogDebug` | Sets log level to Debug |
+| `LogWarn` | Sets log level to Warning |
+| `LogInfo` | Sets log level to Info |
 
 ## Compilation
 
@@ -73,15 +73,14 @@ After compilation, run the `goidle` binary. Ensure your Wayland compositor suppo
 Here's an example of how to add keybindings in Sway to interact with Goidle:
 
 ```bash
-# goidle
 bindsym --locked XF86MonBrightnessDown exec dbus-send --print-reply --dest=io.github.trbjo.GoIdle /io/github/trbjo/GoIdle io.github.trbjo.GoIdle.LightDecrease
 bindsym --locked XF86MonBrightnessUp exec dbus-send --print-reply --dest=io.github.trbjo.GoIdle /io/github/trbjo/GoIdle io.github.trbjo.GoIdle.LightIncrease
-bindsym --locked F1 exec dbus-send --print-reply --dest=io.github.trbjo.GoIdle /io/github/trbjo/GoIdle io.github.trbjo.GoIdle.LightDecrease
-bindsym --locked F2 exec dbus-send --print-reply --dest=io.github.trbjo.GoIdle /io/github/trbjo/GoIdle io.github.trbjo.GoIdle.LightIncrease
 
 bindsym --locked XF86PowerOff exec dbus-send --type=method_call --print-reply --dest=io.github.trbjo.GoIdle /io/github/trbjo/GoIdle io.github.trbjo.GoIdle.Suspend
+
 bindswitch --locked lid:on exec exec dbus-send --type=method_call --print-reply --dest=io.github.trbjo.GoIdle /io/github/trbjo/GoIdle io.github.trbjo.GoIdle.LidClose
 bindswitch --locked lid:off exec exec dbus-send --type=method_call --print-reply --dest=io.github.trbjo.GoIdle /io/github/trbjo/GoIdle io.github.trbjo.GoIdle.LidOpen
+
 bindsym --no-repeat --locked $super+l exec dbus-send --session --type=method_call --print-reply --dest=io.github.trbjo.GoIdle /io/github/trbjo/GoIdle io.github.trbjo.GoIdle.ToggleOutput string:"eDP-1"
 ```
 
