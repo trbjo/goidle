@@ -82,7 +82,7 @@ func (o *WaylandListener) IdleGraceDuration(graceDuration string) *dbus.Error {
 func (o *WaylandListener) ToggleOutput(output string) *dbus.Error {
     lg.Info("output toggled")
     err := o.opm.ToggleOutput(output)
-    if (err != nil) {
+    if err != nil {
         lg.Error(err.Error())
     }
     return nil
