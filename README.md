@@ -6,8 +6,8 @@ Goidle is an idle management solution for Wayland compositors that implements ou
 
 - Output on/off management
 - Brightness management
-- Implementation of `ext_idle_notify_v1` protocol
-- Configurable idle timeouts for locked and unlocked states
+- Automatic unlock when connected to trusted WiFi networks
+- Different idle timeouts for locked and unlocked states
 - Automatic dimming and restoring of brightness as an idle indicator
 - DBus API for system control
 
