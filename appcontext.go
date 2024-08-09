@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"os/exec"
 	"time"
 )
 
@@ -68,6 +69,7 @@ type Config struct {
 	BacklightDimRatio    float64  `json:"backlight_dim_ratio"`
 	BacklightSteps       int      `json:"backlight_steps"`
 	IdleGraceDuration    Duration `json:"idle_grace_duration"`
+	LockCommand          []string `json:"lock_command"`
 	path                 string
 	WifiManager          *WifiManager `json:"trusted_wifi_networks"`
 }
@@ -108,6 +110,7 @@ func initConfig(configPath string) *Config {
 			BacklightDimRatio:    0.2,
 			BacklightSteps:       16,
 			IdleGraceDuration:    Duration{Duration: 30 * time.Second},
+			LockCommand:          getDefaultLockCommand(),
 			path:                 configPath,
 			WifiManager:          &WifiManager{TrustedWifis: []string{}},
 		}
@@ -126,7 +129,24 @@ func initConfig(configPath string) *Config {
 		config.BacklightCurveFactor = 0.5
 	}
 
+	if len(config.LockCommand) == 0 {
+		config.LockCommand = getDefaultLockCommand()
+	}
+
 	return config
+}
+
+func getDefaultLockCommand() []string {
+	if _, err := exec.LookPath("hyprlock"); err == nil {
+		return []string{"hyprlock"}
+	}
+	if _, err := exec.LookPath("swaylock"); err == nil {
+		return []string{"swaylock"}
+	}
+	if _, err := exec.LookPath("waylock"); err == nil {
+		return []string{"waylock"}
+	}
+	panic("No screenlocker found, not starting")
 }
 
 func (c *Config) Dump() {

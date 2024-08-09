@@ -56,7 +56,7 @@ func CreateLockManager(
 
 		MusicStop()
 
-		lockCommand := exec.Command("/usr/bin/hyprlock")
+		lockCommand := exec.Command(config.LockCommand[0], config.LockCommand[1:]...)
 		devNull, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
 		if err != nil {
 			lg.Error("could not open /dev/null for suspend", "error", err.Error())
