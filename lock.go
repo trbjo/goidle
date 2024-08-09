@@ -107,7 +107,7 @@ func CreateLockManager(
 			return true
 		}
 
-		go NetWatcher(config.WifiManager.TrustedWifis, func(success bool) {
+		go NetWatcher(config.TrustedWifis, func(success bool) {
 			if isLockRunning.Load() != instanceId {
 				return
 			}

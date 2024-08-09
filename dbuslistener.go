@@ -42,13 +42,13 @@ func (o *WaylandListener) LidOpen() *dbus.Error {
 }
 
 func (o *WaylandListener) WifiTrust() *dbus.Error {
-    o.config.WifiManager.AddCurrent()
+    o.config.AddCurrentWifi()
     o.config.Dump()
     return nil
 }
 
 func (o *WaylandListener) WifiDistrust() *dbus.Error {
-    o.config.WifiManager.RemoveCurrent()
+    o.config.RemoveCurrentWifi()
     o.config.Dump()
     return nil
 }

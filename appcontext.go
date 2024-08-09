@@ -8,47 +8,12 @@ import (
 	"time"
 )
 
-type WifiManager struct {
-	TrustedWifis []string `json:"trusted_wifis"`
-}
-
-func (wm *WifiManager) RemoveCurrent() {
-	mac, err := ExtractMac()
-	if err != nil {
-		lg.Error(err.Error())
-		return
-	}
-	var newlist []string
-	for _, macAddress := range wm.TrustedWifis {
-		if macAddress != mac {
-			newlist = append(newlist, macAddress)
-		}
-	}
-	wm.TrustedWifis = newlist
-}
-
-func (wm *WifiManager) AddCurrent() {
-	mac, err := ExtractMac()
-	if err != nil {
-		lg.Error(err.Error())
-		return
-	}
-	for _, macAddress := range wm.TrustedWifis {
-		if macAddress == mac {
-			return
-		}
-	}
-	wm.TrustedWifis = append(wm.TrustedWifis, mac)
-	lg.Debug("successfully added wifi")
-}
-
 type Duration struct {
 	time.Duration
 }
 
 func (d Duration) MarshalJSON() ([]byte, error) {
-	durationString := d.Duration.String()
-	return json.Marshal(durationString)
+	return json.Marshal(d.Duration.String())
 }
 
 func (d *Duration) UnmarshalJSON(b []byte) error {
@@ -70,8 +35,38 @@ type Config struct {
 	BacklightSteps       int      `json:"backlight_steps"`
 	IdleGraceDuration    Duration `json:"idle_grace_duration"`
 	LockCommand          []string `json:"lock_command"`
+	TrustedWifis         []string `json:"trusted_wifi_networks"`
 	path                 string
-	WifiManager          *WifiManager `json:"trusted_wifi_networks"`
+}
+
+func (c *Config) RemoveCurrentWifi() {
+	mac, err := ExtractMac()
+	if err != nil {
+		lg.Error(err.Error())
+		return
+	}
+	var newlist []string
+	for _, macAddress := range c.TrustedWifis {
+		if macAddress != mac {
+			newlist = append(newlist, macAddress)
+		}
+	}
+	c.TrustedWifis = newlist
+}
+
+func (c *Config) AddCurrentWifi() {
+	mac, err := ExtractMac()
+	if err != nil {
+		lg.Error(err.Error())
+		return
+	}
+	for _, macAddress := range c.TrustedWifis {
+		if macAddress == mac {
+			return
+		}
+	}
+	c.TrustedWifis = append(c.TrustedWifis, mac)
+	lg.Debug("successfully added wifi")
 }
 
 func loadConfigFromFile(configPath string) (*Config, error) {
@@ -111,8 +106,8 @@ func initConfig(configPath string) *Config {
 			BacklightSteps:       16,
 			IdleGraceDuration:    Duration{Duration: 30 * time.Second},
 			LockCommand:          getDefaultLockCommand(),
+			TrustedWifis:         []string{},
 			path:                 configPath,
-			WifiManager:          &WifiManager{TrustedWifis: []string{}},
 		}
 	}
 
@@ -161,6 +156,7 @@ func (c *Config) Dump() {
 		lg.Error(err.Error())
 		return
 	}
+	defer file.Close()
 	_, err = file.Write(jsonData)
 	if err != nil {
 		lg.Error(err.Error())
