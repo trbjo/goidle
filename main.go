@@ -180,7 +180,7 @@ func main() {
 		case <-signalChannel:
 			lg.Info("got shutdown signal")
 			SM.SetState(None, 0, nop)
-			DumpConfig(configPath, config)
+			config.Dump()
 			os.Exit(0)
 		}
 	}

@@ -64,10 +64,11 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 }
 
 type Config struct {
-	BacklightCurveFactor float64      `json:"backlight_curve_factor"`
-	BacklightDimRatio    float64      `json:"backlight_dim_ratio"`
-	BacklightSteps       int          `json:"backlight_steps"`
-	IdleGracePeriod      Duration     `json:"idle_grace_period"`
+	BacklightCurveFactor float64  `json:"backlight_curve_factor"`
+	BacklightDimRatio    float64  `json:"backlight_dim_ratio"`
+	BacklightSteps       int      `json:"backlight_steps"`
+	IdleGracePeriod      Duration `json:"idle_grace_period"`
+	path                 string
 	WifiManager          *WifiManager `json:"trusted_wifi_networks"`
 }
 
@@ -107,6 +108,7 @@ func initConfig(configPath string) *Config {
 			BacklightDimRatio:    0.2,
 			BacklightSteps:       16,
 			IdleGracePeriod:      Duration{Duration: 30 * time.Second},
+			path:                 configPath,
 			WifiManager:          &WifiManager{TrustedWifis: []string{}},
 		}
 	}
@@ -127,14 +129,14 @@ func initConfig(configPath string) *Config {
 	return config
 }
 
-func DumpConfig(path string, config *Config) {
+func (c *Config) Dump() {
 	lg.Debug("dumping config to disk")
-	jsonData, err := json.MarshalIndent(config, "", "    ")
+	jsonData, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
 		lg.Error(err.Error())
 		return
 	}
-	file, err := os.Create(path)
+	file, err := os.Create(c.path)
 	if err != nil {
 		lg.Error(err.Error())
 		return
