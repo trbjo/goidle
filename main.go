@@ -86,7 +86,7 @@ func main() {
 
 	LockStartUser, LockStartIdle, LockStop := CreateLockManager(config, LockUnlockAttempt)
 	lidClosed := utilities.CreateLidChecker()
-	SuspendFunc := CreateSuspendFunc(lidClosed)
+	SuspendFunc := CreateSuspendFunc(lidClosed, config.SuspendCommand)
 
 	backlightFunc, err := NewBacklight(config)
 	if err != nil {

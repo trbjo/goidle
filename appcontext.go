@@ -40,6 +40,7 @@ type Config struct {
 	TimeoutActiveToIdle        Duration `json:"timeout_active_to_idle"`
 	TimeoutIdleBacklightOff    Duration `json:"timeout_idle_backlight_off"`
 	TimeoutIdleToSuspend       Duration `json:"timeout_idle_to_suspend"`
+	SuspendCommand             []string `json:"suspend_command"`
 	TrustedWifis               []string `json:"trusted_wifi_networks"`
 
 	path string
@@ -117,6 +118,7 @@ func initConfig(configPath string) *Config {
 			TimeoutIdleBacklightOff: Duration{Duration: 15 * time.Second},
 			TimeoutIdleToSuspend:    Duration{Duration: 20 * time.Second},
 			TrustedWifis:            []string{},
+			SuspendCommand:          []string{},
 			path:                    configPath,
 		}
 	}
