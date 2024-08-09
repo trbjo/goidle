@@ -67,7 +67,7 @@ type Config struct {
 	BacklightCurveFactor float64  `json:"backlight_curve_factor"`
 	BacklightDimRatio    float64  `json:"backlight_dim_ratio"`
 	BacklightSteps       int      `json:"backlight_steps"`
-	IdleGracePeriod      Duration `json:"idle_grace_period"`
+	IdleGraceDuration    Duration `json:"idle_grace_duration"`
 	path                 string
 	WifiManager          *WifiManager `json:"trusted_wifi_networks"`
 }
@@ -107,7 +107,7 @@ func initConfig(configPath string) *Config {
 			BacklightCurveFactor: 0.5,
 			BacklightDimRatio:    0.2,
 			BacklightSteps:       16,
-			IdleGracePeriod:      Duration{Duration: 30 * time.Second},
+			IdleGraceDuration:    Duration{Duration: 30 * time.Second},
 			path:                 configPath,
 			WifiManager:          &WifiManager{TrustedWifis: []string{}},
 		}

@@ -67,13 +67,14 @@ func (o *WaylandListener) LogInfo() *dbus.Error {
     return nil
 }
 
-func (o *WaylandListener) Grace(grace string) *dbus.Error {
-    duration, err := time.ParseDuration(grace)
+func (o *WaylandListener) IdleGraceDuration(graceDuration string) *dbus.Error {
+    duration, err := time.ParseDuration(graceDuration)
     if err != nil {
         return dbus.NewError(err.Error(), []interface{}{})
     }
-    lg.Info(grace)
-    o.config.IdleGracePeriod.Duration = duration
+    lg.Info(graceDuration)
+    o.config.IdleGraceDuration.Duration = duration
+    o.config.Dump()
     return nil
 }
 

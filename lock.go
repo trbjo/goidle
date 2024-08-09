@@ -47,7 +47,7 @@ func CreateLockManager(
 
 		if userInitiated {
 			idleLockStartedAt = unix.Timespec{
-				Sec:  timeSinceBoot().Sec - int64(config.IdleGracePeriod.Seconds()) - 1,
+				Sec:  timeSinceBoot().Sec - int64(config.IdleGraceDuration.Seconds()) - 1,
 				Nsec: 0,
 			}
 		} else {
@@ -101,7 +101,7 @@ func CreateLockManager(
 		mu.Lock()
 		defer mu.Unlock()
 
-		if getTimeDelta(timeSinceBoot(), idleLockStartedAt) < config.IdleGracePeriod.Duration {
+		if getTimeDelta(timeSinceBoot(), idleLockStartedAt) < config.IdleGraceDuration.Duration {
 			lg.Debug("TIMEOUT unlock")
 			sendNonBlockingMessage(true)
 			return true
