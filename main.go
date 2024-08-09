@@ -87,7 +87,7 @@ func main() {
 	lidClosed := utilities.CreateLidChecker()
 	SuspendFunc := CreateSuspendFunc(lidClosed)
 
-	backlightFunc, err := NewBacklight()
+	backlightFunc, err := NewBacklight(config)
 	if err != nil {
 		lg.Error(err.Error())
 		return

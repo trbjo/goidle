@@ -14,14 +14,17 @@ import (
 const backlightPath = "/sys/class/backlight"
 
 type Backlight struct {
+	curveFactor    float64
 	device         string
 	maxBright      int
 	savedBright    int
 	hasSaved       bool
 	brightnessPath string
+	steps          int
+	dimRatio       float64
 }
 
-func NewBacklight() (func(BackLight), error) {
+func NewBacklight(config *Config) (func(BackLight), error) {
 	devices, err := os.ReadDir(backlightPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read backlight devices: %v", err)
@@ -31,8 +34,12 @@ func NewBacklight() (func(BackLight), error) {
 		return nil, fmt.Errorf("no backlight devices found")
 	}
 
-	b := &Backlight{device: devices[0].Name(),
+	b := &Backlight{
+		device:         devices[0].Name(),
 		brightnessPath: filepath.Join(backlightPath, devices[0].Name(), "brightness"),
+		curveFactor:    config.BacklightCurveFactor,
+		steps:          config.BacklightSteps,
+		dimRatio:       config.BacklightDimRatio,
 	}
 
 	maxBrightness, err := os.ReadFile(filepath.Join(backlightPath, b.device, "max_brightness"))
@@ -44,7 +51,7 @@ func NewBacklight() (func(BackLight), error) {
 		return nil, fmt.Errorf("invalid max brightness value: %v", err)
 	}
 
-	controlChan := make(chan BackLight, 1) // Buffered channel to make sends non-blocking
+	controlChan := make(chan BackLight, 1)
 
 	go b.controlLoop(controlChan)
 
@@ -79,6 +86,43 @@ func (b *Backlight) getCurrentBrightness() (int, error) {
 	return strconv.Atoi(strings.TrimSpace(string(data)))
 }
 
+func calculateSteps(maxBright, numSteps int, curveFactor float64) []int {
+	steps := make([]int, numSteps)
+	steps[0] = 1
+	steps[numSteps-1] = maxBright
+
+	for i := 1; i < numSteps-1; i++ {
+		t := math.Pow(float64(i)/float64(numSteps-1), curveFactor)
+		steps[i] = int(math.Round(math.Pow(float64(maxBright), t)))
+	}
+
+	// Ensure all steps are unique and in ascending order
+	uniqueSteps := []int{1}
+	for i := 1; i < len(steps); i++ {
+		if steps[i] > uniqueSteps[len(uniqueSteps)-1] {
+			uniqueSteps = append(uniqueSteps, steps[i])
+		}
+	}
+
+	// If we have fewer steps than required, interpolate
+	for len(uniqueSteps) < numSteps {
+		for i := 1; i < len(uniqueSteps); i++ {
+			if uniqueSteps[i]-uniqueSteps[i-1] > 1 {
+				newStep := (uniqueSteps[i] + uniqueSteps[i-1]) / 2
+				uniqueSteps = append(uniqueSteps[:i], append([]int{newStep}, uniqueSteps[i:]...)...)
+				break
+			}
+		}
+	}
+
+	// If we somehow ended up with more steps, trim
+	if len(uniqueSteps) > numSteps {
+		uniqueSteps = uniqueSteps[:numSteps]
+	}
+
+	return uniqueSteps
+}
+
 func (b *Backlight) increase() {
 	current, err := b.getCurrentBrightness()
 	if err != nil {
@@ -86,38 +130,16 @@ func (b *Backlight) increase() {
 		return
 	}
 
-	// Handle very low brightness values
-	if current < 1 {
-		newBrightness := 1
-		err = b.setBrightness(newBrightness)
-		if err != nil {
-			lg.Error("Error setting brightness:", "", err)
+	steps := calculateSteps(b.maxBright, b.steps, b.curveFactor)
+
+	for _, step := range steps {
+		if step > current {
+			err = b.setBrightness(step)
+			if err != nil {
+				lg.Error("Error setting brightness:", "", err)
+			}
+			return
 		}
-		return
-	}
-
-	currentStep := math.Log(float64(current)) / math.Log(float64(b.maxBright))
-	nextStep := currentStep + 0.0625 // 1/16 for smooth steps
-
-	if nextStep > 1 {
-		nextStep = 1
-	}
-
-	newBrightness := int(math.Pow(float64(b.maxBright), nextStep))
-
-	// Ensure we always increase by at least 1
-	if newBrightness <= current {
-		newBrightness = current + 1
-	}
-
-	// Make sure we don't exceed the maximum brightness
-	if newBrightness > b.maxBright {
-		newBrightness = b.maxBright
-	}
-
-	err = b.setBrightness(newBrightness)
-	if err != nil {
-		lg.Error("Error setting brightness:", "", err)
 	}
 }
 
@@ -128,21 +150,16 @@ func (b *Backlight) decrease() {
 		return
 	}
 
-	currentStep := math.Log(float64(current)) / math.Log(float64(b.maxBright))
-	nextStep := currentStep - 0.0625 // 1/16 for smooth steps
+	steps := calculateSteps(b.maxBright, b.steps, b.curveFactor)
 
-	if nextStep < 0 {
-		nextStep = 0
-	}
-
-	newBrightness := int(math.Pow(float64(b.maxBright), nextStep))
-	if newBrightness < 1 {
-		newBrightness = 1
-	}
-
-	err = b.setBrightness(newBrightness)
-	if err != nil {
-		lg.Error("Error setting brightness:", "", err)
+	for i := len(steps) - 1; i >= 0; i-- {
+		if steps[i] < current {
+			err = b.setBrightness(steps[i])
+			if err != nil {
+				lg.Error("Error setting brightness:", "", err)
+			}
+			return
+		}
 	}
 }
 
@@ -156,7 +173,7 @@ func (b *Backlight) dim() {
 	b.savedBright = current
 	b.hasSaved = true
 
-	newBrightness := int(float64(current) * 0.2) // Dim to 20% of current brightness
+	newBrightness := int(float64(current) * b.dimRatio)
 	if newBrightness < 1 {
 		newBrightness = 1
 	}

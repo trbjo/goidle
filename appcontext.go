@@ -64,8 +64,11 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 }
 
 type Config struct {
-	IdleGracePeriod Duration                   `json:"idle_grace_period"`
-	WifiManager     *WifiManager               `json:"trusted_wifi_networks"`
+	BacklightCurveFactor float64      `json:"backlight_curve_factor"`
+	BacklightDimRatio    float64      `json:"backlight_dim_ratio"`
+	BacklightSteps       int          `json:"backlight_steps"`
+	IdleGracePeriod      Duration     `json:"idle_grace_period"`
+	WifiManager          *WifiManager `json:"trusted_wifi_networks"`
 }
 
 func loadConfigFromFile(configPath string) (*Config, error) {
@@ -91,6 +94,7 @@ func loadConfigFromFile(configPath string) (*Config, error) {
 		return nil, err
 	}
 
+	config.path = configPath
 	return &config, nil
 }
 
@@ -99,10 +103,27 @@ func initConfig(configPath string) *Config {
 	if err != nil {
 		lg.Info("Failed to load config, creating a new one")
 		return &Config{
-			IdleGracePeriod: Duration{Duration: 30 * time.Second},
-			WifiManager:   &WifiManager{TrustedWifis: []string{}},
+			BacklightCurveFactor: 0.5,
+			BacklightDimRatio:    0.2,
+			BacklightSteps:       16,
+			IdleGracePeriod:      Duration{Duration: 30 * time.Second},
+			WifiManager:          &WifiManager{TrustedWifis: []string{}},
 		}
 	}
+
+	// Set default values if not specified in the loaded config
+	if config.BacklightSteps == 0 {
+		config.BacklightSteps = 16
+	}
+
+	if config.BacklightDimRatio == 0 {
+		config.BacklightDimRatio = 0.2
+	}
+
+	if config.BacklightCurveFactor == 0 {
+		config.BacklightCurveFactor = 0.5
+	}
+
 	return config
 }
 
