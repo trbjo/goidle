@@ -11,13 +11,13 @@ import (
 )
 
 type OutputPowerManager struct {
-    display  *client.Display
-    registry *client.Registry
-    manager  *wlroutput.OutputPowerManagerV1
-    outputs  map[string]*outputInfo
-    mu       sync.Mutex
-    running  bool
-    stopCh   chan struct{}
+	display  *client.Display
+	registry *client.Registry
+	manager  *wlroutput.OutputPowerManagerV1
+	outputs  map[string]*outputInfo
+	mu	   sync.Mutex
+	running  bool
+	stopCh   chan struct{}
 }
 
 type outputInfo struct {
@@ -51,7 +51,7 @@ func NewOutputPowerManager() (*OutputPowerManager, error) {
 		return nil, err
 	}
 
-    opm.StartEventLoop()
+	opm.StartEventLoop()
 
 	return opm, nil
 }
@@ -267,52 +267,52 @@ func (opm *OutputPowerManager) ListOutputNames() []string {
 }
 
 func (opm *OutputPowerManager) StartEventLoop() {
-    opm.mu.Lock()
-    if opm.running {
-        opm.mu.Unlock()
-        return
-    }
-    opm.running = true
-    opm.stopCh = make(chan struct{})
-    opm.mu.Unlock()
+	opm.mu.Lock()
+	if opm.running {
+		opm.mu.Unlock()
+		return
+	}
+	opm.running = true
+	opm.stopCh = make(chan struct{})
+	opm.mu.Unlock()
 
-    go func() {
-        for {
-            select {
-            case <-opm.stopCh:
-                return
-            default:
-                opm.display.Context().Dispatch()
-            }
-        }
-    }()
+	go func() {
+		for {
+			select {
+			case <-opm.stopCh:
+				return
+			default:
+				opm.display.Context().Dispatch()
+			}
+		}
+	}()
 }
 
 func (opm *OutputPowerManager) StopEventLoop() {
-    opm.mu.Lock()
-    defer opm.mu.Unlock()
-    if !opm.running {
-        return
-    }
-    close(opm.stopCh)
-    opm.running = false
+	opm.mu.Lock()
+	defer opm.mu.Unlock()
+	if !opm.running {
+		return
+	}
+	close(opm.stopCh)
+	opm.running = false
 }
 
 
 
 func (opm *OutputPowerManager) Close() {
-    opm.StopEventLoop()
+	opm.StopEventLoop()
 
-    opm.mu.Lock()
-    defer opm.mu.Unlock()
+	opm.mu.Lock()
+	defer opm.mu.Unlock()
 
-    for _, info := range opm.outputs {
-        info.power.Destroy()
-    }
-    if opm.manager != nil {
-        opm.manager.Destroy()
-    }
-    opm.display.Context().Close()
+	for _, info := range opm.outputs {
+		info.power.Destroy()
+	}
+	if opm.manager != nil {
+		opm.manager.Destroy()
+	}
+	opm.display.Context().Close()
 }
 
 func (opm *OutputPowerManager) reconnect() error {

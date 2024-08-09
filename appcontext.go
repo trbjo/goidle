@@ -34,6 +34,7 @@ type Config struct {
 	BacklightDimRatio          float64  `json:"backlight_dim_ratio"`
 	BacklightSteps             int      `json:"backlight_steps"`
 	IdleGraceDuration          Duration `json:"idle_grace_duration"`
+	IdleSeat                   string   `json:"idle_seat"`
 	LockCommand                []string `json:"lock_command"`
 	LockInitIgnoreInputTimeout Duration `json:"lock_init_ignore_input_timeout"`
 	TimeoutActiveDim           Duration `json:"timeout_active_dim"`
@@ -108,9 +109,10 @@ func initConfig(configPath string) *Config {
 	if err != nil {
 		lg.Info("Failed to load config, creating a new one")
 		config = &Config{
-			IdleGraceDuration:       Duration{Duration: 30 * time.Second},
-			TrustedWifis:            []string{},
-			path:                    configPath,
+			IdleGraceDuration: Duration{Duration: 30 * time.Second},
+			TrustedWifis:      []string{},
+			IdleSeat:          "seat0",
+			path:              configPath,
 		}
 	}
 

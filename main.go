@@ -76,7 +76,7 @@ func main() {
 
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
 
-	idleManager, err := NewIdleManager("seat0")
+	idleManager, err := NewIdleManager(config.IdleSeat)
 	if err != nil {
 		lg.Error("Failed to create idle manager", "error", err.Error())
 		return

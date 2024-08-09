@@ -8,9 +8,10 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/trbjo/goidle/utilities"
 	"sync"
 	"syscall"
+
+	"github.com/trbjo/goidle/utilities"
 )
 
 func CreateLockManager(
@@ -81,10 +82,10 @@ func CreateLockManager(
 		}()
 
 		go func() {
-			lg.Debug("before LockStopRequest")
 			manualStop := <-LockStopRequest
 			lg.Debug("after LockStopRequest")
 			if manualStop {
+				lg.Debug("stopping lock")
 				syscall.Kill(int(instanceId), syscall.SIGUSR1)
 			}
 		}()
@@ -121,6 +122,9 @@ func CreateLockManager(
 				lg.Debug("Not connected to trusted wifi")
 			}
 		})
+
+
+		lg.Debug("returning false, not unlocking")
 		return false
 	}
 
