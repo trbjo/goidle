@@ -107,33 +107,24 @@ func initConfig(configPath string) *Config {
 	config, err := loadConfigFromFile(configPath)
 	if err != nil {
 		lg.Info("Failed to load config, creating a new one")
-		return &Config{
-			BacklightCurveFactor:    0.5,
-			BacklightDimRatio:       0.2,
-			BacklightSteps:          16,
+		config = &Config{
 			IdleGraceDuration:       Duration{Duration: 30 * time.Second},
-			LockCommand:             getDefaultLockCommand(),
-			TimeoutActiveDim:        Duration{Duration: 150 * time.Second},
-			TimeoutActiveToIdle:     Duration{Duration: 180 * time.Second},
-			TimeoutIdleBacklightOff: Duration{Duration: 15 * time.Second},
-			TimeoutIdleToSuspend:    Duration{Duration: 20 * time.Second},
 			TrustedWifis:            []string{},
-			SuspendCommand:          []string{},
 			path:                    configPath,
 		}
 	}
 
 	// Set default values if not specified in the loaded config
-	if config.BacklightSteps == 0 {
-		config.BacklightSteps = 16
+	if config.BacklightCurveFactor == 0 {
+		config.BacklightCurveFactor = 0.5
 	}
 
 	if config.BacklightDimRatio == 0 {
 		config.BacklightDimRatio = 0.2
 	}
 
-	if config.BacklightCurveFactor == 0 {
-		config.BacklightCurveFactor = 0.5
+	if config.BacklightSteps == 0 {
+		config.BacklightSteps = 16
 	}
 
 	if config.TimeoutActiveDim.Duration == 0 {
