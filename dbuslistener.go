@@ -9,11 +9,11 @@ import (
 )
 
 const (
-    dbusInterface = "io.github.trbjo.WaylandListener"
-    dbusPath      = "/io/github/trbjo/WaylandListener"
+    dbusInterface = "io.github.trbjo.GoIdle"
+    dbusPath      = "/io/github/trbjo/GoIdle"
 )
 
-type WaylandListener struct {
+type GoIdleDbus struct {
     config           *Config
     opm              *OutputPowerManager
     userRequestsFunc func(UserRequest)
@@ -21,54 +21,54 @@ type WaylandListener struct {
     backlightFunc    func(BackLight)
 }
 
-func (o *WaylandListener) Suspend() *dbus.Error {
+func (o *GoIdleDbus) Suspend() *dbus.Error {
     go func() { o.userRequestsFunc(Suspend) }()
     return nil
 }
 
-func (o *WaylandListener) Lock() *dbus.Error {
+func (o *GoIdleDbus) Lock() *dbus.Error {
     go func() { o.userRequestsFunc(Lock) }()
     return nil
 }
 
-func (o *WaylandListener) LidClose() *dbus.Error {
+func (o *GoIdleDbus) LidClose() *dbus.Error {
     go func() { o.lidEventsFunc(LidClose) }()
     return nil
 }
 
-func (o *WaylandListener) LidOpen() *dbus.Error {
+func (o *GoIdleDbus) LidOpen() *dbus.Error {
     go func() { o.lidEventsFunc(LidOpen) }()
     return nil
 }
 
-func (o *WaylandListener) WifiTrust() *dbus.Error {
+func (o *GoIdleDbus) WifiTrust() *dbus.Error {
     o.config.AddCurrentWifi()
     o.config.Dump()
     return nil
 }
 
-func (o *WaylandListener) WifiDistrust() *dbus.Error {
+func (o *GoIdleDbus) WifiDistrust() *dbus.Error {
     o.config.RemoveCurrentWifi()
     o.config.Dump()
     return nil
 }
 
-func (o *WaylandListener) LogDebug() *dbus.Error {
+func (o *GoIdleDbus) LogDebug() *dbus.Error {
     logger.SetLogLevel("debug")
     return nil
 }
 
-func (o *WaylandListener) LogWarn() *dbus.Error {
+func (o *GoIdleDbus) LogWarn() *dbus.Error {
     logger.SetLogLevel("warn")
     return nil
 }
 
-func (o *WaylandListener) LogInfo() *dbus.Error {
+func (o *GoIdleDbus) LogInfo() *dbus.Error {
     logger.SetLogLevel("info")
     return nil
 }
 
-func (o *WaylandListener) IdleGraceDuration(graceDuration string) *dbus.Error {
+func (o *GoIdleDbus) IdleGraceDuration(graceDuration string) *dbus.Error {
     duration, err := time.ParseDuration(graceDuration)
     if err != nil {
         return dbus.NewError(err.Error(), []interface{}{})
@@ -79,7 +79,7 @@ func (o *WaylandListener) IdleGraceDuration(graceDuration string) *dbus.Error {
     return nil
 }
 
-func (o *WaylandListener) ToggleOutput(output string) *dbus.Error {
+func (o *GoIdleDbus) ToggleOutput(output string) *dbus.Error {
     lg.Info("output toggled")
     err := o.opm.ToggleOutput(output)
     if err != nil {
@@ -88,24 +88,24 @@ func (o *WaylandListener) ToggleOutput(output string) *dbus.Error {
     return nil
 }
 
-func (o *WaylandListener) IdleInhibit() *dbus.Error {
+func (o *GoIdleDbus) IdleInhibit() *dbus.Error {
     lg.Debug("IdleInhibit")
     go func() { o.userRequestsFunc(IdleInhibit) }()
     return nil
 }
 
-func (o *WaylandListener) IdleAllow() *dbus.Error {
+func (o *GoIdleDbus) IdleAllow() *dbus.Error {
     lg.Debug("IdleAllow")
     go func() { o.userRequestsFunc(IdleAllow) }()
     return nil
 }
 
-func (o *WaylandListener) LightIncrease() *dbus.Error {
+func (o *GoIdleDbus) LightIncrease() *dbus.Error {
     o.backlightFunc(Increase)
     return nil
 }
 
-func (o *WaylandListener) LightDecrease() *dbus.Error {
+func (o *GoIdleDbus) LightDecrease() *dbus.Error {
     o.backlightFunc(Decrease)
     return nil
 }
@@ -133,7 +133,7 @@ func setupDbus(
         os.Exit(1)
     }
 
-    obj := &WaylandListener{
+    obj := &GoIdleDbus{
         config:           config,
         opm:              opm,
         userRequestsFunc: userRequestsFunc,
