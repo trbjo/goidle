@@ -15,33 +15,34 @@ var lg = logger.Slog
 
 func setupIdleEvents(
 	SM *StateManager,
+	config *Config,
 	idleEventsFunc func(IdleEvent),
 	backlightFunc func(BackLight),
 	turnOffBacklight func(),
 ) {
-
-	// active
-	SM.RegisterTimeout(Active, 150*time.Second,
+	// Active state timeouts
+	SM.RegisterTimeout(Active, config.TimeoutActiveDim.Duration,
 		func() { backlightFunc(Dim) },
 		func() { backlightFunc(Restore) },
 	)
 
-	SM.RegisterTimeout(Active, 180*time.Second,
+	SM.RegisterTimeout(Active, config.TimeoutActiveToIdle.Duration,
 		func() { idleEventsFunc(IdleRequest) },
 		func() {},
 	)
 
+	// Idle state timeouts
 	SM.RegisterTimeoutOnce(Idle, 30*time.Millisecond,
 		func() {},
 		func() { idleEventsFunc(TryUnlock) },
 	)
 
-	SM.RegisterTimeout(Idle, 15*time.Second,
+	SM.RegisterTimeout(Idle, config.TimeoutIdleBacklightOff.Duration,
 		func() { turnOffBacklight() },
 		func() { idleEventsFunc(TryUnlock) },
 	)
 
-	SM.RegisterTimeout(Idle, 20*time.Second,
+	SM.RegisterTimeout(Idle, config.TimeoutIdleToSuspend.Duration,
 		func() { idleEventsFunc(TryIdleToSuspend) },
 		func() {},
 	)
@@ -106,7 +107,7 @@ func main() {
 		backlightFunc,
 	)
 
-	setupIdleEvents(SM, utilities.CreateNonBlockingSender(idleEvents), backlightFunc, backlightOff)
+	setupIdleEvents(SM, config, utilities.CreateNonBlockingSender(idleEvents), backlightFunc, backlightOff)
 	SM.SetState(Active, 0, nop)
 	go idleManager.Run()
 
@@ -142,7 +143,7 @@ func main() {
 					opm.On()
 				}
 			case IdleRequest:
-				SM.SetState(Idle, 0, func() bool {
+				SM.SetState(Idle, config.LockInitIgnoreInputTimeout.Duration, func() bool {
 					backlightOff()
 					return LockStartIdle()
 				})
@@ -160,7 +161,7 @@ func main() {
 			lg.Debug("userRequests", "", res.String())
 			switch res {
 			case Lock:
-				SM.SetState(Idle, 500*time.Millisecond, func() bool {
+				SM.SetState(Idle, config.LockInitIgnoreInputTimeout.Duration, func() bool {
 					backlightOff()
 					return LockStartUser()
 				})

@@ -83,15 +83,12 @@ func (sm *StateManager) SetState(newState StateValue, duration time.Duration, st
 	lg.Debug("Successfully stopped old state", "state", sm.currentState.Get().String())
 	sm.currentState.Set(None)
 
-	timer := time.NewTimer(duration)
-
 	if !stateFunc() {
-		timer.Stop()
 		lg.Debug("Did not meet criteria for", "statefunc", newState.String())
 		return
 	}
 
-	<-timer.C
+	time.Sleep(duration)
 
 	for _, handler := range sm.timeouts {
 		if newState == handler.State {

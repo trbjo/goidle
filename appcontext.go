@@ -30,13 +30,19 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 }
 
 type Config struct {
-	BacklightCurveFactor float64  `json:"backlight_curve_factor"`
-	BacklightDimRatio    float64  `json:"backlight_dim_ratio"`
-	BacklightSteps       int      `json:"backlight_steps"`
-	IdleGraceDuration    Duration `json:"idle_grace_duration"`
-	LockCommand          []string `json:"lock_command"`
-	TrustedWifis         []string `json:"trusted_wifi_networks"`
-	path                 string
+	BacklightCurveFactor       float64  `json:"backlight_curve_factor"`
+	BacklightDimRatio          float64  `json:"backlight_dim_ratio"`
+	BacklightSteps             int      `json:"backlight_steps"`
+	IdleGraceDuration          Duration `json:"idle_grace_duration"`
+	LockCommand                []string `json:"lock_command"`
+	LockInitIgnoreInputTimeout Duration `json:"lock_init_ignore_input_timeout"`
+	TimeoutActiveDim           Duration `json:"timeout_active_dim"`
+	TimeoutActiveToIdle        Duration `json:"timeout_active_to_idle"`
+	TimeoutIdleBacklightOff    Duration `json:"timeout_idle_backlight_off"`
+	TimeoutIdleToSuspend       Duration `json:"timeout_idle_to_suspend"`
+	TrustedWifis               []string `json:"trusted_wifi_networks"`
+
+	path string
 }
 
 func (c *Config) RemoveCurrentWifi() {
@@ -101,13 +107,17 @@ func initConfig(configPath string) *Config {
 	if err != nil {
 		lg.Info("Failed to load config, creating a new one")
 		return &Config{
-			BacklightCurveFactor: 0.5,
-			BacklightDimRatio:    0.2,
-			BacklightSteps:       16,
-			IdleGraceDuration:    Duration{Duration: 30 * time.Second},
-			LockCommand:          getDefaultLockCommand(),
-			TrustedWifis:         []string{},
-			path:                 configPath,
+			BacklightCurveFactor:    0.5,
+			BacklightDimRatio:       0.2,
+			BacklightSteps:          16,
+			IdleGraceDuration:       Duration{Duration: 30 * time.Second},
+			LockCommand:             getDefaultLockCommand(),
+			TimeoutActiveDim:        Duration{Duration: 150 * time.Second},
+			TimeoutActiveToIdle:     Duration{Duration: 180 * time.Second},
+			TimeoutIdleBacklightOff: Duration{Duration: 15 * time.Second},
+			TimeoutIdleToSuspend:    Duration{Duration: 20 * time.Second},
+			TrustedWifis:            []string{},
+			path:                    configPath,
 		}
 	}
 
@@ -124,8 +134,34 @@ func initConfig(configPath string) *Config {
 		config.BacklightCurveFactor = 0.5
 	}
 
+	if config.TimeoutActiveDim.Duration == 0 {
+		config.TimeoutActiveDim = Duration{Duration: 150 * time.Second}
+		lg.Info("timeout_active_dim not set, using 150s")
+	}
+
+	if config.TimeoutActiveToIdle.Duration == 0 {
+		config.TimeoutActiveToIdle = Duration{Duration: config.TimeoutActiveDim.Duration + 30*time.Second}
+		lg.Info("timeout_active_to_idle not set, using timeout_active_dim + 30s",
+			"value", config.TimeoutActiveToIdle.Duration.String())
+	}
+
+	if config.TimeoutIdleBacklightOff.Duration == 0 {
+		config.TimeoutIdleBacklightOff = Duration{Duration: 15 * time.Second}
+		lg.Info("timeout_idle_backlight_off not set, using 15s")
+	}
+
+	if config.TimeoutIdleToSuspend.Duration == 0 {
+		config.TimeoutIdleToSuspend = Duration{Duration: config.TimeoutIdleBacklightOff.Duration + 5*time.Second}
+		lg.Info("timeout_idle_to_suspend not set, using timeout_idle_backlight_off + 5s",
+			"value", config.TimeoutIdleToSuspend.Duration.String())
+	}
+
 	if len(config.LockCommand) == 0 {
 		config.LockCommand = getDefaultLockCommand()
+	}
+
+	if config.LockInitIgnoreInputTimeout.Duration == 0 {
+		config.LockInitIgnoreInputTimeout = Duration{Duration: 1 * time.Second}
 	}
 
 	return config
